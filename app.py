@@ -95,7 +95,7 @@ for i, bab_name in enumerate(list(st.session_state.riset.keys())[1:]):
                             
                             # Menggunakan SDK resmi google-genai dengan penamaan model super aman
                             response = client.models.generate_content(
-                                model='gemini-1.5-flash',
+                                model='gemini-2.5-flash',
                                 contents=user_prompt,
                                 config=types.GenerateContentConfig(
                                     system_instruction=base_instruction
@@ -135,7 +135,7 @@ for i, bab_name in enumerate(list(st.session_state.riset.keys())[1:]):
                                 konteks_tambahan = f"\nData empiris riset saat ini:\n{data_context}" if data_context else ""
                                 
                                 response = client.models.generate_content(
-                                    model='gemini-1.5-flash',
+                                    model='gemini-2.5-flash',
                                     contents=f"Perintah Perubahan:\n{instruksi_revisi}",
                                     config=types.GenerateContentConfig(
                                         system_instruction=f"Anda adalah Profesor Ahli. Lakukan perombakan teks ilmiah secara masif berdasarkan perintah pengguna tanpa merusak struktur sitasi.\n\nTeks Asli:\n\n{st.session_state.riset[bab_name]}{konteks_tambahan}"
