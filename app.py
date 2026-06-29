@@ -95,7 +95,7 @@ for i, bab_name in enumerate(list(st.session_state.riset.keys())[1:]):
                             )
                             
                             response = client.chat.completions.create(
-                                model="gemini_1.5_flash", # Menggunakan penamaan model terbaru sesuai preferensi Anda
+                                model="gemini-2.5-flash", # Menggunakan penamaan model terbaru sesuai preferensi Anda
                                 messages=[
                                     {"role": "system", "content": base_instruction},
                                     {"role": "user", "content": user_prompt}
@@ -135,7 +135,7 @@ for i, bab_name in enumerate(list(st.session_state.riset.keys())[1:]):
                             try:
                                 konteks_tambahan = f"\nData empiris riset saat ini:\n{data_context}" if data_context else ""
                                 response = client.chat.completions.create(
-                                    model="gemini_1.5_flash",
+                                    model="gemini-2.5-flash",
                                     messages=[
                                         {"role": "system", "content": "Anda adalah Profesor Ahli. Lakukan perombakan teks ilmiah secara masif dan mendalam tanpa merusak sitasi in-text yang sudah ada."},
                                         {"role": "user", "content": f"Teks Asli:\n\n{st.session_state.riset[bab_name]}{konteks_tambahan}"},
