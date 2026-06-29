@@ -179,27 +179,26 @@ with tabs[5]:
             st.markdown(line)
         st.session_state.riset["Bab 5: Kesimpulan & Referensi"] += "\n\n### DAFTAR PUSTAKA\n" + "\n".join(formatted_list)
 
-# 4. Fitur Otomatisasi Ekspor Menuju Google Dokumen
+# 4. Fitur Unduh Berkas untuk Google Dokumen / Word (Menggantikan kode yang eror)
 with tabs[6]:
     st.header("💾 Ekspor Tulisan ke Google Workspace")
-    full_manuscript = f"# {st.session_state.riset['Topik']}\n\n"
+    st.write("Unduh seluruh manuskrip riset Bab 1 sampai Bab 5 dalam format dokumen (.doc) untuk langsung dibuka di Google Dokumen.")
+    
+    # Menyatukan seluruh naskah riset dari lembar kerja
+    full_manuscript = f"JUDUL PENELITIAN: {st.session_state.riset['Topik']}\n\n"
     for bab, content in st.session_state.riset.items():
         if bab == "Topik": continue
-        full_manuscript += f"## {bab}\n\n{content}\n\n"
+        full_manuscript += f"=== {bab} ===\n\n{content}\n\n"
         
     st.text_area("Pratinjau Berkas Manuskrip:", full_manuscript, height=250)
     
-    if st.button("Kirim Seluruh Bab ke Google Dokumen 🚀"):
-        with st.spinner("Menghubungkan ke Google Drive..."):
-            try:
-                doc_html_content = full_manuscript.replace("\n", "<br>")
-                created_doc = gemkick_corpus.create_document(
-                    title=f"Manuskrip - {st.session_state.riset['Topik']}",
-                    document_type="GOOGLE_DOC",
-                    document_content=f"<html><body>{doc_html_content}</body></html>"
-                )
-                st.success("Sukses! Dokumen akademik Anda telah dibuat di Google Dokumen.")
-                st.markdown(f"👉 **[Klik di Sini untuk Membuka Dokumen Anda]({created_doc['url']})**")
-                st.write(created_doc['tag'])
-            except Exception as e:
-                st.error(f"Sistem gagal melakukan ekspor: {e}")
+    # Tombol Unduh Instan Tanpa Hambatan Dependensi Eksternal
+    st.download_button(
+        label="📥 Unduh Manuskrip untuk Google Dokumen (.doc) 🚀",
+        data=full_manuscript,
+        file_name=f"Manuskrip_{st.session_state.riset['Topik'].replace(' ', '_')}.doc",
+        mime="application/msword",
+        type="primary"
+    )
+    
+    st.info("💡 **Tips:** Setelah berkas terunduh ke HP atau Laptop Anda, buka **[Google Drive](https://drive.google.com/)**, unggah berkas tersebut, lalu pilih 'Buka dengan Google Dokumen' untuk melanjutkan proses bimbingan atau penyuntingan secara online.")
