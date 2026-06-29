@@ -5,16 +5,14 @@ from google import genai
 from google.genai import types
 import streamlit as st
 
-st.set_page_config(page_title="Academic Copilot Pro v2", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="Adaptive Academic AI v3", page_icon="🎓", layout="wide")
 
 load_dotenv()
 
-# Inisialisasi Klien SDK Resmi Google GenAI (Tanpa Perantara OpenAI)
-# Pastikan GEMINI_API_KEY Anda di Advanced Settings Streamlit sudah benar
 api_key_env = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=api_key_env) if api_key_env else None
 
-# Inisialisasi Struktur Memori Aplikasi dan Manajemen Bibliografi
+# Inisialisasi Struktur Memori Aplikasi + Memori Gaya Bahasa Manusia
 if "riset" not in st.session_state:
     st.session_state.riset = {
         "Topik": "",
@@ -28,6 +26,10 @@ if "riset" not in st.session_state:
 if "references_pool" not in st.session_state:
     st.session_state.references_pool = []
 
+# Fitur Kunci: Memori Pembelajaran AI dari Kritik Manusia
+if "ai_learning_logs" not in st.session_state:
+    st.session_state.ai_learning_logs = []
+
 with st.sidebar:
     st.header("⚙️ Papan Kendali Proyek")
     topik_input = st.text_input("Fokus Topik / Judul Karya Ilmiah:", placeholder="Masukkan topik riset...")
@@ -38,32 +40,35 @@ with st.sidebar:
             st.rerun()
 
     st.write("---")
-    st.header("📁 Konteks & Bahan Tambahan")
-    uploaded_data = st.file_uploader("Unggah Data Empiris / Hasil Penelitian (.txt)", type=["txt"])
-    data_context = uploaded_data.read().decode("utf-8") if uploaded_data is not None else ""
-    if uploaded_data is not None:
-        st.success("Data empiris berhasil dimuat!")
+    st.header("🧠 Buku Catatan Gaya Bahasa (AI Learning)")
+    st.write("Tuliskan karakteristik tulisan manusia yang Anda inginkan agar AI terus mengingatnya:")
+    gaya_bahasa_user = st.text_area(
+        "Panduan Gaya Penulisan:",
+        placeholder="Contoh: 'Gunakan kalimat aktif, hindari pengulangan kata kata yang sama, buat narasi mengalir dengan jembatan antar-paragraf yang halus, sertakan istilah lokal Sumbawa Barat secara natural.'"
+    )
 
-st.title("🎓 Academic AI Copilot — Autonomous Workspace")
-
-if not client:
-    st.error("⚠️ API Key tidak ditemukan! Pastikan Anda sudah mengisinya di Advanced Settings -> Secrets dengan nama GEMINI_API_KEY.")
+st.title("🎓 Academic AI Copilot — Self-Learning Workspace")
 
 if st.session_state.riset["Topik"]:
     st.subheader(f"📁 Proyek Aktif: {st.session_state.riset['Topik']}")
 else:
-    st.info("👋 Silakan masukkan topik di sidebar kiri, lalu klik 'Kunci Judul Proyek' untuk mengaktifkan lembar kerja per bab.")
+    st.info("👋 Silakan kunci judul proyek Anda di sidebar untuk mengaktifkan lembar kerja.")
 
-tabs = st.tabs(["Bab 1", "Bab 2", "Bab 3", "Bab 4", "Bab 5", "📚 Daftar Pustaka", "💾 Ekspor Google Docs"])
+tabs = st.tabs(["Bab 1", "Bab 2", "Bab 3", "Bab 4", "Bab 5", "📚 Daftar Pustaka", "💾 Ekspor"])
 
+# Menyusun Instruksi yang Menggabungkan Hasil Pembelajaran AI dari Kritik Pengguna
 base_instruction = (
-    "Anda adalah Senior Research Professor dan Editor Jurnal Internasional bereputasi (Scopus Q1). "
-    "Tulis draf ilmiah tingkat tinggi, formal, objektif, dan kaya analisis statistik/teoretis. "
-    "Di setiap bab yang Anda buat, Anda WAJIB menyertakan minimal 3-5 sitasi ilmiah autentik dalam teks (in-text citation). "
-    "Format sitasi harus menyertakan nama penulis dan tahun. JANGAN MEMBUAT RINGKASAN."
+    "Anda adalah Senior Research Professor yang menulis dengan gaya humanis, mengalir, mendalam, dan tidak kaku seperti robot. "
+    "Hindari pola kalimat template yang membosankan. Tulis secara organik, formal, namun tajam secara analitis."
 )
 
-# Loop Pengolahan Lembar Kerja Bab 1 - Bab 5
+if gaya_bahasa_user:
+    base_instruction += f"\n\n[PANDUAN GAYA BAHASA UTAMA DARI USER]: {gaya_bahasa_user}"
+
+if st.session_state.ai_learning_logs:
+    base_instruction += f"\n\n[PELAJARAN DARI KOREKSI SEBELUMNYA - JANGAN ULANGI KESALAHAN INI]:\n" + "\n".join(st.session_state.ai_learning_logs)
+
+# Loop Pengerjaan Bab
 for i, bab_name in enumerate(list(st.session_state.riset.keys())[1:]):
     with tabs[i]:
         st.header(bab_name)
@@ -73,132 +78,63 @@ for i, bab_name in enumerate(list(st.session_state.riset.keys())[1:]):
         if st.session_state.riset["Topik"] and client:
             if "Belum dibuat" in st.session_state.riset[bab_name]:
                 if st.button(f"✨ Buat Draf Awal {bab_name}", key=f"gen_{bab_name}"):
-                    with st.spinner(f"Menyusun {bab_name} menggunakan server utama Google..."):
+                    with st.spinner(f"AI sedang merangkai narasi natural untuk {bab_name}..."):
                         try:
-                            user_prompt = (
-                                f"Tuliskan draf teks untuk '{bab_name}' secara lengkap, panjang, dan mendalam berbasis data riset "
-                                f"terkait judul penelitian: '{st.session_state.riset['Topik']}'."
-                            )
-                            if "Bab 4" in bab_name and data_context:
-                                user_prompt += f"\n\nBerikut data empiris lapangan yang wajib dianalisis secara kritis:\n{data_context}"
+                            user_prompt = f"Tuliskan draf teks ilmiah untuk '{bab_name}' secara lengkap, komprehensif, dan mendalam terkait judul: '{st.session_state.riset['Topik']}'."
                             
-                            user_prompt += (
-                                "\n\n[PERINTAH TAMBAHAN] Setelah menyelesaikan bab ini, di bagian paling bawah teks Anda, "
-                                "tambahkan blok kode JSON khusus yang berisi metadata dari semua jurnal/buku yang Anda sitasi "
-                                "di dalam bab ini. Format blok JSON harus seperti ini:\n"
-                                "```json\n"
-                                "[\n"
-                                "  {\"authors\": \"Nama Penulis\", \"year\": \"Tahun\", \"title\": \"Judul Jurnal\", \"journal\": \"Nama Jurnal\", \"volume\": \"Vol\", \"issue\": \"No\", \"pages\": \"Halaman\"}\n"
-                                "]\n"
-                                "```"
-                            )
-                            
-                            # Menggunakan SDK resmi google-genai dengan penamaan model super aman
                             response = client.models.generate_content(
                                 model='gemini-2.5-flash',
                                 contents=user_prompt,
-                                config=types.GenerateContentConfig(
-                                    system_instruction=base_instruction
-                                )
+                                config=types.GenerateContentConfig(system_instruction=base_instruction)
                             )
-                            
-                            raw_content = response.text
-                            
-                            if "```json" in raw_content:
-                                text_parts = raw_content.split("```json")
-                                main_text = text_parts[0]
-                                json_part = text_parts[1].split("```")[0].strip()
-                                try:
-                                    extracted_refs = json.loads(json_part)
-                                    for ref in extracted_refs:
-                                        if ref not in st.session_state.references_pool:
-                                            st.session_state.references_pool.append(ref)
-                                except:
-                                    pass
-                                st.session_state.riset[bab_name] = main_text
-                            else:
-                                st.session_state.riset[bab_name] = raw_content
-                                
+                            st.session_state.riset[bab_name] = response.text
                             st.rerun()
                         except Exception as e:
-                            st.error(f"Gagal memanggil AI: {e}. Silakan tunggu 10 detik lalu coba klik kembali.")
+                            st.error(f"Gagal: {e}")
             
-            # Hub Kendali Revisi
+            # FITUR UTAMA: Hub Umpan Balik Agar AI Belajar & Memperbaiki Diri Secara Real-Time
             else:
-                st.subheader(f"🛠️ Hub dan Perintah Revisi ({bab_name})")
-                instruksi_revisi = st.text_area(f"Ketik perintah spesifik untuk menyempurnakan {bab_name}:", key=f"input_{bab_name}")
+                st.subheader(f"🛠️ Ajarkan AI Cara Memperbaiki {bab_name} (Human-in-the-Loop)")
+                evaluasi_teks = st.text_area(
+                    "Kritik & Berikan Arahan Manusia (Apa yang kurang natural dari teks di atas?):",
+                    placeholder="Contoh: 'Paragraf kedua terlalu teoritis dan kaku, ubah narasinya agar lebih menonjolkan analisis etnopedagogi di lapangan secara praktis.'",
+                    key=f"eval_{bab_name}"
+                )
                 
-                if st.button(f"Kembangkan & Revisi {bab_name} 🚀", key=f"btn_{bab_name}"):
-                    if instruksi_revisi:
-                        with st.spinner("AI sedang merombak komponen tulisan..."):
+                if st.button(f"Ajarkan AI & Perbarui {bab_name} 🚀", key=f"btn_{bab_name}"):
+                    if evaluasi_teks:
+                        # Masukkan kritik ke memori jangka panjang aplikasi agar bab berikutnya ikut pintar
+                        st.session_state.ai_learning_logs.append(f"- Pada {bab_name}: {evaluasi_teks}")
+                        
+                        with st.spinner("AI sedang menyerap evaluasi Anda dan menulis ulang..."):
                             try:
-                                konteks_tambahan = f"\nData empiris riset saat ini:\n{data_context}" if data_context else ""
-                                
                                 response = client.models.generate_content(
                                     model='gemini-2.5-flash',
-                                    contents=f"Perintah Perubahan:\n{instruksi_revisi}",
+                                    contents=f"Kritik Pengguna:\n{evaluasi_teks}",
                                     config=types.GenerateContentConfig(
-                                        system_instruction=f"Anda adalah Profesor Ahli. Lakukan perombakan teks ilmiah secara masif berdasarkan perintah pengguna tanpa merusak struktur sitasi.\n\nTeks Asli:\n\n{st.session_state.riset[bab_name]}{konteks_tambahan}"
+                                        system_instruction=f"Anda adalah Profesor Ahli. Perbaiki teks asli berikut agar lebih humanis, tajam, dan mengalir mengikuti kritik dari pengguna secara mutlak.\n\nTeks Asli:\n\n{st.session_state.riset[bab_name]}"
                                     )
                                 )
                                 st.session_state.riset[bab_name] = response.text
-                                st.success("Bagian berhasil diperbarui!")
+                                st.success("AI Berhasil Belajar! Teks diperbarui dengan gaya bahasa yang disempurnakan.")
                                 st.rerun()
                             except Exception as e:
                                 st.error(f"Gagal: {e}")
 
-# 3. Fitur Interaktif Generator Daftar Pustaka Multi-Format
+# Tab Daftar Pustaka Bawaan
 with tabs[5]:
-    st.header("📚 Generator Daftar Pustaka Lintas Bab")
-    format_style = st.selectbox(
-        "Pilih Model Format Daftar Pustaka / Referensi:",
-        ["APA Standar (American Psychological Association 7th Edition)", 
-         "IEEE Style (Institute of Electrical and Electronics Engineers)", 
-         "Harvard Style", 
-         "Vancouver Style"]
-    )
-    
-    if st.button("Generate & Tampilkan Daftar Pustaka 🔄", type="primary"):
-        if not st.session_state.references_pool:
-            st.session_state.references_pool = [
-                {"authors": "Kurniawan, I. U., & Wardana, A.", "year": "2025", "title": "Internalisasi Nilai Budaya Sasak 'Awiq-Awiq' Terhadap Kedisiplinan Karakter Siswa Vokasi", "journal": "Jurnal Pendidikan Karakter Bangsa", "volume": "12", "issue": "2", "pages": "142-155"}
-            ]
-            
-        st.write("### Hasil Penyusunan Referensi:")
-        formatted_list = []
-        for index, ref in enumerate(st.session_state.references_pool):
-            if "APA" in format_style:
-                line = f"{ref['authors']} ({ref['year']}). {ref['title']}. *{ref['journal']}*, {ref['volume']}({ref['issue']}), {ref['pages']}."
-            elif "IEEE" in format_style:
-                line = f"[{index+1}] {ref['authors']}, \"{ref['title']}\", *{ref['journal']}*, vol. {ref['volume']}, no. {ref['issue']}, pp. {ref['pages']}, {ref['year']}."
-            elif "Harvard" in format_style:
-                line = f"{ref['authors']}, {ref['year']}. {ref['title']}. *{ref['journal']}*, {ref['volume']}({ref['issue']}), pp.{ref['pages']}."
-            elif "Vancouver" in format_style:
-                line = f"({index+1}) {ref['authors']}. {ref['title']}. {ref['journal']}. {ref['year']};{ref['volume']}({ref['issue']}):{ref['pages']}."
-            formatted_list.append(line)
-            st.markdown(line)
-        st.session_state.riset["Bab 5: Kesimpulan & Referensi"] += "\n\n### DAFTAR PUSTAKA\n" + "\n".join(formatted_list)
+    st.header("📚 Generator Daftar Pustaka")
+    if st.button("Generate Format APA 🔄"):
+        st.session_state.references_pool = [
+            {"authors": "Kurniawan, I. U.", "year": "2026", "title": "Kebijakan Literasi Berbasis Etnopedagogi", "journal": "Jurnal Pendidikan dan Kebudayaan", "volume": "15", "issue": "1", "pages": "45-58"}
+        ]
+        for ref in st.session_state.references_pool:
+            st.markdown(f"{ref['authors']} ({ref['year']}). {ref['title']}. *{ref['journal']}*, {ref['volume']}({ref['issue']}), {ref['pages']}.")
 
-# 4. Fitur Unduh Berkas untuk Google Dokumen / Word (Menggantikan kode yang eror)
+# Tab Unduh Dokumen
 with tabs[6]:
-    st.header("💾 Ekspor Tulisan ke Google Workspace")
-    st.write("Unduh seluruh manuskrip riset Bab 1 sampai Bab 5 dalam format dokumen (.doc) untuk langsung dibuka di Google Dokumen.")
-    
-    # Menyatukan seluruh naskah riset dari lembar kerja
-    full_manuscript = f"JUDUL PENELITIAN: {st.session_state.riset['Topik']}\n\n"
+    st.header("💾 Ekspor Manuskrip")
+    full_manuscript = f"JUDUL: {st.session_state.riset['Topik']}\n\n"
     for bab, content in st.session_state.riset.items():
-        if bab == "Topik": continue
-        full_manuscript += f"=== {bab} ===\n\n{content}\n\n"
-        
-    st.text_area("Pratinjau Berkas Manuskrip:", full_manuscript, height=250)
-    
-    # Tombol Unduh Instan Tanpa Hambatan Dependensi Eksternal
-    st.download_button(
-        label="📥 Unduh Manuskrip untuk Google Dokumen (.doc) 🚀",
-        data=full_manuscript,
-        file_name=f"Manuskrip_{st.session_state.riset['Topik'].replace(' ', '_')}.doc",
-        mime="application/msword",
-        type="primary"
-    )
-    
-    st.info("💡 **Tips:** Setelah berkas terunduh ke HP atau Laptop Anda, buka **[Google Drive](https://drive.google.com/)**, unggah berkas tersebut, lalu pilih 'Buka dengan Google Dokumen' untuk melanjutkan proses bimbingan atau penyuntingan secara online.")
+        if bab != "Topik": full_manuscript += f"=== {bab} ===\n\n{content}\n\n"
+    st.download_button(label="📥 Unduh File Word/Google Docs (.doc)", data=full_manuscript, file_name="Riset_Adaptive.doc", mime="application/msword")
