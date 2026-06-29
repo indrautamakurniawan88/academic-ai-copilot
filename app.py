@@ -83,7 +83,7 @@ for i, bab_name in enumerate(list(st.session_state.riset.keys())[1:]):
                                 user_prompt += f"\n\nBerikut adalah data empiris hasil penelitian di lapangan yang WAJIB Anda olah, analisis, dan narasikan ke dalam pembahasan:\n{data_context}"
                             
                             response = client.chat.completions.create(
-                                model="gemini-2.5-flash", # <--- Ganti nama model terbaru di sini jika diperlukan
+                                model="gemini-3.5-flash", # <--- Ganti nama model terbaru di sini jika diperlukan
                                 messages=[
                                     {"role": "system", "content": base_instruction},
                                     {"role": "user", "content": user_prompt}
@@ -106,7 +106,7 @@ for i, bab_name in enumerate(list(st.session_state.riset.keys())[1:]):
                                 # Jika ada data empiris baru, ikut sertakan dalam proses revisi
                                 konteks_tambahan = f"\nData empiris yang tersedia:\n{data_context}" if data_context else ""
                                 response = client.chat.completions.create(
-                                    model="gemini-2.5-flash", # <--- Ganti nama model terbaru di sini jika diperlukan
+                                    model="gemini-3.5-flash", # <--- Ganti nama model terbaru di sini jika diperlukan
                                     messages=[
                                         {"role": "system", "content": "Anda adalah Profesor Ahli. Lakukan revisi mendalam pada draf teks ilmiah berdasarkan instruksi pengguna."},
                                         {"role": "user", "content": f"Teks Asli:\n\n{st.session_state.riset[bab_name]}{konteks_tambahan}"},
