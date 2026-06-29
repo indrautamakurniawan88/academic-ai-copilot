@@ -83,7 +83,7 @@ for i, bab_name in enumerate(list(st.session_state.riset.keys())[1:]):
                             user_prompt = f"Tuliskan draf teks ilmiah untuk '{bab_name}' secara lengkap, komprehensif, dan mendalam terkait judul: '{st.session_state.riset['Topik']}'."
                             
                             response = client.models.generate_content(
-                                model='gemini-2.5-flash',
+                                model='gemini-1.5-flash',
                                 contents=user_prompt,
                                 config=types.GenerateContentConfig(system_instruction=base_instruction)
                             )
@@ -109,7 +109,7 @@ for i, bab_name in enumerate(list(st.session_state.riset.keys())[1:]):
                         with st.spinner("AI sedang menyerap evaluasi Anda dan menulis ulang..."):
                             try:
                                 response = client.models.generate_content(
-                                    model='gemini-2.5-flash',
+                                    model='gemini-1.5-flash',
                                     contents=f"Kritik Pengguna:\n{evaluasi_teks}",
                                     config=types.GenerateContentConfig(
                                         system_instruction=f"Anda adalah Profesor Ahli. Perbaiki teks asli berikut agar lebih humanis, tajam, dan mengalir mengikuti kritik dari pengguna secara mutlak.\n\nTeks Asli:\n\n{st.session_state.riset[bab_name]}"
